@@ -1,6 +1,23 @@
 # JobForge — Distributed Job Scheduler
 
+![License](https://img.shields.io/badge/license-unknown-lightgrey)
+![Backend](https://img.shields.io/badge/backend-Java%20%2B%20Maven-red)
+![Frontend](https://img.shields.io/badge/frontend-TypeScript%20%2B%20React-blue)
+![Database](https://img.shields.io/badge/database-PostgreSQL-blueviolet)
+![Build](https://img.shields.io/badge/build-Docker%20Compose-2496ED)
+
 JobForge is a runnable, production-style distributed job scheduler and worker platform. It combines authentication, queueing, scheduling, retries, worker coordination, and an operations dashboard into a single reference implementation.
+
+## Table of contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Quick start](#quick-start)
+- [Usage examples](#usage-examples)
+- [Architecture](#architecture)
+- [Repository contents](#repository-contents)
+- [Delivery semantics](#delivery-semantics)
+- [Contributing](#contributing)
 
 ## Overview
 
@@ -47,7 +64,7 @@ The execution contract is **at-least-once**. Job submission supports **idempoten
 - Operational visibility into jobs, queues, and workers
 - Local development-friendly UI/API setup
 
-## Setup
+## Quick start
 
 ### Prerequisites
 
@@ -77,6 +94,36 @@ After startup:
 cd backend
 mvn test
 ```
+
+## Usage examples
+
+### Submit and process jobs
+
+1. Start the stack with Docker Compose.
+2. Log in to the dashboard using the demo credentials.
+3. Create a project and queue.
+4. Submit an immediate job or schedule one for later.
+5. Watch workers claim, execute, retry, or move jobs to the Dead Letter Queue.
+
+### Typical workflow
+
+- Create a queue for a specific workload.
+- Register one or more workers.
+- Configure concurrency and retry behavior.
+- Submit jobs in batches when needed.
+- Inspect execution history and replay failed jobs from the dashboard.
+
+### Working with retries
+
+If a job fails, JobForge can retry it using fixed, linear, or exponential backoff. This is useful for temporary failures such as network issues, rate limits, or external service downtime.
+
+### Designing idempotent handlers
+
+Because JobForge is at-least-once, handlers should avoid duplicate side effects. For example:
+
+- use idempotency keys when calling external APIs
+- persist deduplication state before performing irreversible work
+- make retries safe for payment, email, and webhook integrations
 
 ## Architecture
 
@@ -117,7 +164,7 @@ This repository includes:
 - Tests
 - Architecture, ER, API, and design documentation
 
-## Notes on delivery semantics
+## Delivery semantics
 
 JobForge is designed for **at-least-once** processing. That means a job may be executed more than once in rare failure scenarios, so downstream handlers should be written to tolerate retries and duplicate delivery.
 
