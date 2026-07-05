@@ -1,0 +1,10 @@
+package com.jobforge;
+import io.jsonwebtoken.*;import io.jsonwebtoken.security.Keys;import jakarta.servlet.*;import jakarta.servlet.http.*;
+import org.springframework.beans.factory.annotation.Value;import org.springframework.context.annotation.*;import org.springframework.security.authentication.*;import org.springframework.security.config.annotation.web.builders.*;import org.springframework.security.config.http.*;import org.springframework.security.core.authority.*;import org.springframework.security.core.context.*;import org.springframework.security.web.*;import org.springframework.security.web.authentication.*;import org.springframework.web.filter.*;
+import javax.crypto.SecretKey;import java.io.*;import java.nio.charset.*;import java.time.*;import java.util.*;
+@Configuration public class Security{
+ private final SecretKey key; Security(@Value("${jobforge.jwt-secret}")String s){key=Keys.hmacShaKeyFor(s.getBytes(StandardCharsets.UTF_8));}
+ String issue(String sub){var n=Instant.now();return Jwts.builder().subject(sub).issuedAt(Date.from(n)).expiration(Date.from(n.plus(Duration.ofHours(8)))).signWith(key).compact();}
+ String subject(String t){return Jwts.parser().verifyWith(key).build().parseSignedClaims(t).getPayload().getSubject();}
+ @Bean SecurityFilterChain chain(HttpSecurity h)throws Exception{return h.csrf(x->x.disable()).cors(x->{}).sessionManagement(x->x.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(x->x.requestMatchers("/api/v1/auth/**").permitAll().anyRequest().authenticated()).addFilterBefore(new OncePerRequestFilter(){protected void doFilterInternal(HttpServletRequest r,HttpServletResponse s,FilterChain c)throws ServletException,IOException{String h=r.getHeader("Authorization");if(h!=null&&h.startsWith("Bearer "))try{String u=subject(h.substring(7));SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(u,null,List.of(new SimpleGrantedAuthority("ROLE_USER"))));}catch(Exception ignored){}c.doFilter(r,s);}},UsernamePasswordAuthenticationFilter.class).build();}
+}
